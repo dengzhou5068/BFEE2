@@ -1,4 +1,4 @@
-# generate NAMD/Gromacs/Colvars config files
+# generate NAMD config files
 
 class configTemplate:
     ''' generate NAMD config files '''

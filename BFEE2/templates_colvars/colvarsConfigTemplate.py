@@ -1,4 +1,4 @@
-# generate NAMD/Gromacs/Colvars config files
+# generate Colvars config files
 
 class configTemplate:
     ''' generate Colvars config files
@@ -11,7 +11,7 @@ class configTemplate:
         """initialize template of colvars config
 
         Args:
-            unit (str): 'namd' (A, kcal) or 'gromacs' (nm, kJ). Defaults to 'namd'.
+            unit (str, optional): 'namd' (A, kcal) or 'gromacs' (nm, kJ). Defaults to 'namd'.
         """
         
         assert(unit == 'namd' or unit == 'gromacs')
@@ -46,8 +46,8 @@ colvar {{                                    \n\
         if setBoundary:
             string += f'\
     width {0.05 * self.lengthFactor}         \n\
-    lowerboundary {lowerBoundary:.1f}        \n\
-    upperboundary {upperBoundary:.1f}        \n\
+    lowerboundary {lowerBoundary * self.lengthFactor:.1f}        \n\
+    upperboundary {upperBoundary * self.lengthFactor:.1f}        \n\
     subtractAppliedForce on                  \n\
     expandboundaries  on                     \n\
     extendedLagrangian on                    \n\
@@ -353,8 +353,8 @@ colvar {{                            \n\
         if setBoundary:
             string += f'\
     width {0.1 * self.lengthFactor}      \n\
-    lowerboundary {lowerBoundary:.1f}    \n\
-    upperboundary {upperBoundary:.1f}    \n\
+    lowerboundary {lowerBoundary * self.lengthFactor:.1f}    \n\
+    upperboundary {upperBoundary * self.lengthFactor:.1f}    \n\
     subtractAppliedForce on          \n\
     expandboundaries  on             \n\
     extendedLagrangian on            \n\
@@ -389,20 +389,33 @@ colvarsTrajFrequency      5000             \n\
 colvarsRestartFrequency   5000            \n\
 indexFile                 {indexFile}      \n'
 
-    def cvHarmonicWallsTemplate(self, cv, lowerWall, upperWall):
+    def cvHarmonicWallsTemplate(self, cv, lowerWall, upperWall, cvType='distance'):
         ''' template of harmonic wall bias
         
         Args:
             cv (str): name of the colvars
             lowerWall (float): lower wall of the bias
             upperWall (float): upper wall of the bias
+            cvType (str, optional): the type of the collective variable, 'distance' or 'angle'.
+                                    Only useful when unit = 'gromacs'. Default to 'distance'
                 
         Returns:
             str: string of the harmonic wall bias definition '''
+
+        assert(cvType == 'distance' or cvType == 'angle')
             
         string = f'\
 harmonicWalls {{                           \n\
-    colvars           {cv}                 \n\
+    colvars           {cv}                 \n'
+        if cvType == 'distance':
+            string += f'\
+    lowerWalls        {lowerWall * self.lengthFactor:.1f}      \n\
+    upperWalls        {upperWall * self.lengthFactor:.1f}      \n\
+    lowerWallConstant {0.2 * self.energyFactor / self.lengthFactor / self.lengthFactor}      \n\
+    upperWallConstant {0.2 * self.energyFactor / self.lengthFactor / self.lengthFactor}      \n\
+}}                                         \n'
+        elif cvType == 'angle':
+            string += f'\
     lowerWalls        {lowerWall:.1f}      \n\
     upperWalls        {upperWall:.1f}      \n\
     lowerWallConstant {0.2 * self.energyFactor}      \n\
@@ -410,7 +423,7 @@ harmonicWalls {{                           \n\
 }}                                         \n'
         return string
 
-    def cvHarmonicTemplate(self, cv, constant, center, tiWindows=0, tiForward=True, targetForceConstant = 0):
+    def cvHarmonicTemplate(self, cv, constant, center, tiWindows=0, tiForward=True, targetForceConstant=0, cvType='distance'):
         """template for a harmonic restraint
 
         Args:
@@ -421,22 +434,40 @@ harmonicWalls {{                           \n\
             tiForward (bool, optional): whether the TI simulation is forward (if runs a TI simulation). Defaults to True.
             targetForceConstant (int, optional): targeted force constant of the restraint in TI simulation
                                                  (if runs a TI simulation)  (in kcal/mol). Defaults to 0.
+            cvType (str, optional): the type of the collective variable, 'distance' or 'angle'.
+                                    Only useful when unit = 'gromacs'. Default to 'distance'
         
         Returns:
             str: string of the harmonic restraint definition
         """
 
+        assert(cvType == 'distance' or cvType == 'angle')
+
         string = f'\
 harmonic {{                          \n\
-    colvars         {cv}             \n\
+    colvars         {cv}             \n'
+        if cvType == 'distance':
+            string += f'\
+    forceConstant   {constant * self.energyFactor / self.lengthFactor / self.lengthFactor:.1f}   \n\
+    centers         {center * self.lengthFactor:.1f}     \n'
+
+        elif cvType == 'angle':
+            string += f'\
     forceConstant   {constant * self.energyFactor:.1f}   \n\
     centers         {center:.1f}     \n'
         
         if tiWindows != 0:
             string += f'\
     targetNumSteps      500000                       \n\
-    targetEquilSteps    100000                       \n\
-    targetForceConstant {targetForceConstant * self.energyFactor}        \n\
+    targetEquilSteps    100000                       \n'
+
+            if cvType == 'distance':
+                string += f'\
+    targetForceConstant {targetForceConstant * self.energyFactor / self.lengthFactor / self.lengthFactor:.1f}        \n\
+    targetForceExponent 4                            \n'
+            elif cvType == 'angle':
+                string += f'\
+    targetForceConstant {targetForceConstant * self.energyFactor:.1f}        \n\
     targetForceExponent 4                            \n'
 
             schedule = ''
@@ -479,7 +510,7 @@ metadynamics {{                   \n\
         """the template of restraining the protein
 
         Args:
-            centerCoor (np.array, 3): (x,y,z), center of the protein 
+            centerCoor (np.array, 3): (x,y,z), center of the protein, in A
             refFile (str): path of the reference file
         
         Returns:
@@ -494,14 +525,14 @@ colvar {{                         \n\
       indexGroup  protein         \n\
     }}                            \n\
     group2 {{                     \n\
-      dummyAtom ({centerCoor[0] * self.lengthFactor}, {centerCoor[1] * self.lengthFactor}, {centerCoor[2] * self.lengthFactor})    \n\
+      dummyAtom ({centerCoor[0]}, {centerCoor[1]}, {centerCoor[2]})    \n\
     }}                            \n\
   }}                              \n\
 }}                                \n\
 harmonic {{                       \n\
   colvars       translation       \n\
   centers       0.0               \n\
-  forceConstant {100.0 * self.energyFactor}    \n\
+  forceConstant {100.0 * self.energyFactor / self.lengthFactor / self.lengthFactor}    \n\
 }}                                \n\
                                   \n\
 colvar {{                         \n\
