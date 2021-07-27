@@ -9,7 +9,8 @@ import numpy as np
 
 from BFEE2.commonTools import fileParser
 from BFEE2.templates_gromacs.BFEEGromacs import BFEEGromacs
-from BFEE2.templates_namd import configTemplate, scriptTemplate
+from BFEE2.templates_namd import namdConfigTemplate, scriptTemplate
+from BFEE2.templates_colvars import colvarsConfigTemplate
 
 try:
     import importlib.resources as pkg_resources
@@ -40,7 +41,8 @@ class inputGenerator():
         """simply initialize the configTemplate objects
         """
 
-        self.cTemplate = configTemplate.configTemplate()
+        self.namdTemplate = namdConfigTemplate.configTemplate()
+        self.colvarsTemplate = colvarsConfigTemplate.configTemplate()
 
     def generateNAMDAlchemicalFiles(
         self,
@@ -700,7 +702,7 @@ class inputGenerator():
         # 000_eq
         with open(f'{path}/BFEE/000_eq/000.1_eq.conf', 'w') as namdConfig:
             namdConfig.write(
-                self.cTemplate.namdConfigTemplate(
+                self.namdTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     '', '', '', pbc,
                     'output/eq', temperature, 5000000, 'colvars.in', '', membraneProtein=membraneProtein
@@ -708,7 +710,7 @@ class inputGenerator():
             )
         with open(f'{path}/BFEE/000_eq/000.2_eq_ligandOnly.conf', 'w') as namdConfig:
             namdConfig.write(
-                self.cTemplate.namdConfigTemplate(
+                self.namdTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../ligandOnly.{topType}', f'../ligandOnly.pdb',
                     '', '', '', pbcLig,
                     'output/eq_ligandOnly', temperature, 1000000, 'colvars_ligandOnly.in',
@@ -719,7 +721,7 @@ class inputGenerator():
         # 001_MoleculeBound
         with open(f'{path}/BFEE/001_MoleculeBound/001.2_fep_forward.conf', 'w') as namdConfig:
             namdConfig.write(
-                self.cTemplate.namdConfigTemplate(
+                self.namdTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'output/fep_backward.coor', f'output/fep_backward.vel', f'output/fep_backward.xsc', '',
                     'output/fep_forward', temperature, 0, 'colvars.in', '', '', '../fep.pdb', 
@@ -728,7 +730,7 @@ class inputGenerator():
             )
         with open(f'{path}/BFEE/001_MoleculeBound/001.1_fep_backward.conf', 'w') as namdConfig:
             namdConfig.write(
-                self.cTemplate.namdConfigTemplate(
+                self.namdTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc', '',
                     'output/fep_backward', temperature, 0, 'colvars.in', '', '', '../fep.pdb', 
@@ -739,7 +741,7 @@ class inputGenerator():
         if doubleWide:
             with open(f'{path}/BFEE/001_MoleculeBound/001_fep_doubleWide.conf', 'w') as namdConfig:
                 namdConfig.write(
-                    self.cTemplate.namdConfigTemplate(
+                    self.namdTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                         f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc', '',
                         'output/fep_doubleWide', temperature, 0, 'colvars.in', '', '', '../fep.pdb', 
@@ -750,7 +752,7 @@ class inputGenerator():
         # 002_RestraintBound
         with open(f'{path}/BFEE/002_RestraintBound/002.2_ti_forward.conf', 'w') as namdConfig:
             namdConfig.write(
-                self.cTemplate.namdConfigTemplate(
+                self.namdTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'output/ti_backward.coor', f'output/ti_backward.vel', f'output/ti_backward.xsc', '',
                     'output/ti_forward', temperature, f'{500000*(stratification[1]+1)}', 'colvars_forward.in', 
@@ -759,7 +761,7 @@ class inputGenerator():
             )
         with open(f'{path}/BFEE/002_RestraintBound/002.1_ti_backward.conf', 'w') as namdConfig:
             namdConfig.write(
-                self.cTemplate.namdConfigTemplate(
+                self.namdTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc', '',
                     'output/ti_backward', temperature, f'{500000*(stratification[1]+1)}', 'colvars_backward.in', 
@@ -770,7 +772,7 @@ class inputGenerator():
         # 003_MoleculeUnbound
         with open(f'{path}/BFEE/003_MoleculeUnbound/003.2_fep_forward.conf', 'w') as namdConfig:
             namdConfig.write(
-                self.cTemplate.namdConfigTemplate(
+                self.namdTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../ligandOnly.{topType}', f'../ligandOnly.pdb',
                     f'output/fep_backward.coor', f'output/fep_backward.vel', 
                     f'output/fep_backward.xsc', '',
@@ -780,7 +782,7 @@ class inputGenerator():
             )
         with open(f'{path}/BFEE/003_MoleculeUnbound/003.1_fep_backward.conf', 'w') as namdConfig:
             namdConfig.write(
-                self.cTemplate.namdConfigTemplate(
+                self.namdTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../ligandOnly.{topType}', f'../ligandOnly.pdb',
                     f'../000_eq/output/eq_ligandOnly.coor', f'../000_eq/output/eq_ligandOnly.vel', 
                     f'../000_eq/output/eq_ligandOnly.xsc', '',
@@ -792,7 +794,7 @@ class inputGenerator():
         if doubleWide:
             with open(f'{path}/BFEE/003_MoleculeUnbound/003_fep_doubleWide.conf', 'w') as namdConfig:
                 namdConfig.write(
-                    self.cTemplate.namdConfigTemplate(
+                    self.namdTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'../ligandOnly.{topType}', f'../ligandOnly.pdb',
                         f'../000_eq/output/eq_ligandOnly.coor', f'../000_eq/output/eq_ligandOnly.vel', 
                         f'../000_eq/output/eq_ligandOnly.xsc', '',
@@ -804,7 +806,7 @@ class inputGenerator():
         # 004_RestraintUnbound
         with open(f'{path}/BFEE/004_RestraintUnbound/004.2_ti_forward.conf', 'w') as namdConfig:
             namdConfig.write(
-                self.cTemplate.namdConfigTemplate(
+                self.namdTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../ligandOnly.{topType}', f'../ligandOnly.pdb',
                     f'output/ti_backward.coor', f'output/ti_backward.vel', 
                     f'output/ti_backward.xsc', '',
@@ -814,7 +816,7 @@ class inputGenerator():
             )
         with open(f'{path}/BFEE/004_RestraintUnbound/004.1_ti_backward.conf', 'w') as namdConfig:
             namdConfig.write(
-                self.cTemplate.namdConfigTemplate(
+                self.namdTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../ligandOnly.{topType}', f'../ligandOnly.pdb',
                     f'../000_eq/output/eq_ligandOnly.coor', f'../000_eq/output/eq_ligandOnly.vel', 
                     f'../000_eq/output/eq_ligandOnly.xsc', '',
@@ -853,299 +855,299 @@ class inputGenerator():
         # 000_eq
         with open(f'{path}/BFEE/000_eq/colvars.in', 'w') as colvarsConfig:
             colvarsConfig.write(
-                self.cTemplate.cvHeadTemplate('../complex.ndx')
+                self.colvarsTemplate.cvHeadTemplate('../complex.ndx')
             )
             colvarsConfig.write(
-                self.cTemplate.cvRMSDTemplate(False, '', '', '../complex.xyz')
+                self.colvarsTemplate.cvRMSDTemplate(False, '', '', '../complex.xyz')
             )
             colvarsConfig.write(
-                self.cTemplate.cvAngleTemplate(
+                self.colvarsTemplate.cvAngleTemplate(
                     False, 0, 0, 'eulerTheta', '../complex.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvAngleTemplate(
+                self.colvarsTemplate.cvAngleTemplate(
                     False, 0, 0, 'eulerPhi', '../complex.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvAngleTemplate(
+                self.colvarsTemplate.cvAngleTemplate(
                     False, 0, 0, 'eulerPsi', '../complex.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvAngleTemplate(
+                self.colvarsTemplate.cvAngleTemplate(
                     False, 0, 0, 'polarTheta', '../complex.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvAngleTemplate(
+                self.colvarsTemplate.cvAngleTemplate(
                     False, 0, 0, 'polarPhi', '../complex.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvRTemplate(
+                self.colvarsTemplate.cvRTemplate(
                     False, 0, 0
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0)
+                self.colvarsTemplate.cvHarmonicTemplate('RMSD', 10, 0)
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('eulerTheta', 0.1, 0)
+                self.colvarsTemplate.cvHarmonicTemplate('eulerTheta', 0.1, 0)
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('eulerPhi', 0.1, 0)
+                self.colvarsTemplate.cvHarmonicTemplate('eulerPhi', 0.1, 0)
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('eulerPsi', 0.1, 0)
+                self.colvarsTemplate.cvHarmonicTemplate('eulerPsi', 0.1, 0)
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('polarTheta', 0.1, polarAngles[0])
+                self.colvarsTemplate.cvHarmonicTemplate('polarTheta', 0.1, polarAngles[0])
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('polarPhi', 0.1, polarAngles[1])
+                self.colvarsTemplate.cvHarmonicTemplate('polarPhi', 0.1, polarAngles[1])
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('r', 10, distance)
+                self.colvarsTemplate.cvHarmonicTemplate('r', 10, distance)
             )
             colvarsConfig.write(
-                self.cTemplate.cvProteinTemplate(center, '../complex.xyz')
+                self.colvarsTemplate.cvProteinTemplate(center, '../complex.xyz')
             )
 
         with open(f'{path}/BFEE/000_eq/colvars_ligandOnly.in', 'w') as colvarsConfig:
             colvarsConfig.write(
-                self.cTemplate.cvHeadTemplate('../ligandOnly.ndx')
+                self.colvarsTemplate.cvHeadTemplate('../ligandOnly.ndx')
             )
             colvarsConfig.write(
-                self.cTemplate.cvRMSDTemplate(False, '', '', '../ligandOnly.xyz')
+                self.colvarsTemplate.cvRMSDTemplate(False, '', '', '../ligandOnly.xyz')
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0)
+                self.colvarsTemplate.cvHarmonicTemplate('RMSD', 10, 0)
             )
 
         # 001_MoleculeBound
         with open(f'{path}/BFEE/001_MoleculeBound/colvars.in', 'w') as colvarsConfig:
             colvarsConfig.write(
-                self.cTemplate.cvHeadTemplate('../complex.ndx')
+                self.colvarsTemplate.cvHeadTemplate('../complex.ndx')
             )
             colvarsConfig.write(
-                self.cTemplate.cvRMSDTemplate(False, '', '', '../complex.xyz')
+                self.colvarsTemplate.cvRMSDTemplate(False, '', '', '../complex.xyz')
             )
             colvarsConfig.write(
-                self.cTemplate.cvAngleTemplate(
+                self.colvarsTemplate.cvAngleTemplate(
                     False, 0, 0, 'eulerTheta', '../complex.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvAngleTemplate(
+                self.colvarsTemplate.cvAngleTemplate(
                     False, 0, 0, 'eulerPhi', '../complex.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvAngleTemplate(
+                self.colvarsTemplate.cvAngleTemplate(
                     False, 0, 0, 'eulerPsi', '../complex.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvAngleTemplate(
+                self.colvarsTemplate.cvAngleTemplate(
                     False, 0, 0, 'polarTheta', '../complex.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvAngleTemplate(
+                self.colvarsTemplate.cvAngleTemplate(
                     False, 0, 0, 'polarPhi', '../complex.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvRTemplate(
+                self.colvarsTemplate.cvRTemplate(
                     False, 0, 0
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0)
+                self.colvarsTemplate.cvHarmonicTemplate('RMSD', 10, 0)
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('eulerTheta', 0.1, 0)
+                self.colvarsTemplate.cvHarmonicTemplate('eulerTheta', 0.1, 0)
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('eulerPhi', 0.1, 0)
+                self.colvarsTemplate.cvHarmonicTemplate('eulerPhi', 0.1, 0)
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('eulerPsi', 0.1, 0)
+                self.colvarsTemplate.cvHarmonicTemplate('eulerPsi', 0.1, 0)
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('polarTheta', 0.1, polarAngles[0])
+                self.colvarsTemplate.cvHarmonicTemplate('polarTheta', 0.1, polarAngles[0])
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('polarPhi', 0.1, polarAngles[1])
+                self.colvarsTemplate.cvHarmonicTemplate('polarPhi', 0.1, polarAngles[1])
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('r', 10, distance)
+                self.colvarsTemplate.cvHarmonicTemplate('r', 10, distance)
             )
             if pinDownPro:
                 colvarsConfig.write(
-                    self.cTemplate.cvProteinTemplate(center, '../complex.xyz')
+                    self.colvarsTemplate.cvProteinTemplate(center, '../complex.xyz')
                 )
 
         # 002_RestraintBound
         with open(f'{path}/BFEE/002_RestraintBound/colvars_forward.in', 'w') as colvarsConfig:
             colvarsConfig.write(
-                self.cTemplate.cvHeadTemplate('../complex.ndx')
+                self.colvarsTemplate.cvHeadTemplate('../complex.ndx')
             )
             colvarsConfig.write(
-                self.cTemplate.cvRMSDTemplate(False, '', '', '../complex.xyz')
+                self.colvarsTemplate.cvRMSDTemplate(False, '', '', '../complex.xyz')
             )
             colvarsConfig.write(
-                self.cTemplate.cvAngleTemplate(
+                self.colvarsTemplate.cvAngleTemplate(
                     False, 0, 0, 'eulerTheta', '../complex.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvAngleTemplate(
+                self.colvarsTemplate.cvAngleTemplate(
                     False, 0, 0, 'eulerPhi', '../complex.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvAngleTemplate(
+                self.colvarsTemplate.cvAngleTemplate(
                     False, 0, 0, 'eulerPsi', '../complex.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvAngleTemplate(
+                self.colvarsTemplate.cvAngleTemplate(
                     False, 0, 0, 'polarTheta', '../complex.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvAngleTemplate(
+                self.colvarsTemplate.cvAngleTemplate(
                     False, 0, 0, 'polarPhi', '../complex.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvRTemplate(
+                self.colvarsTemplate.cvRTemplate(
                     False, 0, 0
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('RMSD', 0, 0, stratification[1], True, 10)
+                self.colvarsTemplate.cvHarmonicTemplate('RMSD', 0, 0, stratification[1], True, 10)
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('eulerTheta', 0, 0, stratification[1], True, 0.1)
+                self.colvarsTemplate.cvHarmonicTemplate('eulerTheta', 0, 0, stratification[1], True, 0.1)
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('eulerPhi', 0, 0, stratification[1], True, 0.1)
+                self.colvarsTemplate.cvHarmonicTemplate('eulerPhi', 0, 0, stratification[1], True, 0.1)
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('eulerPsi', 0, 0, stratification[1], True, 0.1)
+                self.colvarsTemplate.cvHarmonicTemplate('eulerPsi', 0, 0, stratification[1], True, 0.1)
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('polarTheta', 0, polarAngles[0], stratification[1], True, 0.1)
+                self.colvarsTemplate.cvHarmonicTemplate('polarTheta', 0, polarAngles[0], stratification[1], True, 0.1)
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('polarPhi', 0, polarAngles[1], stratification[1], True, 0.1)
+                self.colvarsTemplate.cvHarmonicTemplate('polarPhi', 0, polarAngles[1], stratification[1], True, 0.1)
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('r', 0, distance, stratification[1], True, 10)
+                self.colvarsTemplate.cvHarmonicTemplate('r', 0, distance, stratification[1], True, 10)
             )
             if pinDownPro:
                 colvarsConfig.write(
-                    self.cTemplate.cvProteinTemplate(center, '../complex.xyz')
+                    self.colvarsTemplate.cvProteinTemplate(center, '../complex.xyz')
                 )
         with open(f'{path}/BFEE/002_RestraintBound/colvars_backward.in', 'w') as colvarsConfig:
             colvarsConfig.write(
-                self.cTemplate.cvHeadTemplate('../complex.ndx')
+                self.colvarsTemplate.cvHeadTemplate('../complex.ndx')
             )
             colvarsConfig.write(
-                self.cTemplate.cvRMSDTemplate(False, '', '', '../complex.xyz')
+                self.colvarsTemplate.cvRMSDTemplate(False, '', '', '../complex.xyz')
             )
             colvarsConfig.write(
-                self.cTemplate.cvAngleTemplate(
+                self.colvarsTemplate.cvAngleTemplate(
                     False, 0, 0, 'eulerTheta', '../complex.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvAngleTemplate(
+                self.colvarsTemplate.cvAngleTemplate(
                     False, 0, 0, 'eulerPhi', '../complex.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvAngleTemplate(
+                self.colvarsTemplate.cvAngleTemplate(
                     False, 0, 0, 'eulerPsi', '../complex.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvAngleTemplate(
+                self.colvarsTemplate.cvAngleTemplate(
                     False, 0, 0, 'polarTheta', '../complex.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvAngleTemplate(
+                self.colvarsTemplate.cvAngleTemplate(
                     False, 0, 0, 'polarPhi', '../complex.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvRTemplate(
+                self.colvarsTemplate.cvRTemplate(
                     False, 0, 0
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('RMSD', 0, 0, stratification[1], False, 10)
+                self.colvarsTemplate.cvHarmonicTemplate('RMSD', 0, 0, stratification[1], False, 10)
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('eulerTheta', 0, 0, stratification[1], False, 0.1)
+                self.colvarsTemplate.cvHarmonicTemplate('eulerTheta', 0, 0, stratification[1], False, 0.1)
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('eulerPhi', 0, 0, stratification[1], False, 0.1)
+                self.colvarsTemplate.cvHarmonicTemplate('eulerPhi', 0, 0, stratification[1], False, 0.1)
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('eulerPsi', 0, 0, stratification[1], False, 0.1)
+                self.colvarsTemplate.cvHarmonicTemplate('eulerPsi', 0, 0, stratification[1], False, 0.1)
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('polarTheta', 0, polarAngles[0], stratification[1], False, 0.1)
+                self.colvarsTemplate.cvHarmonicTemplate('polarTheta', 0, polarAngles[0], stratification[1], False, 0.1)
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('polarPhi', 0, polarAngles[1], stratification[1], False, 0.1)
+                self.colvarsTemplate.cvHarmonicTemplate('polarPhi', 0, polarAngles[1], stratification[1], False, 0.1)
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('r', 0, distance, stratification[1], False, 10)
+                self.colvarsTemplate.cvHarmonicTemplate('r', 0, distance, stratification[1], False, 10)
             )
             if pinDownPro:
                 colvarsConfig.write(
-                    self.cTemplate.cvProteinTemplate(center, '../complex.xyz')
+                    self.colvarsTemplate.cvProteinTemplate(center, '../complex.xyz')
                 )
 
         # 003_MoleculeUnbound
         with open(f'{path}/BFEE/003_MoleculeUnbound/colvars.in', 'w') as colvarsConfig:
             colvarsConfig.write(
-                self.cTemplate.cvHeadTemplate('../ligandOnly.ndx')
+                self.colvarsTemplate.cvHeadTemplate('../ligandOnly.ndx')
             )
             colvarsConfig.write(
-                self.cTemplate.cvRMSDTemplate(False, '', '', '../ligandOnly.xyz')
+                self.colvarsTemplate.cvRMSDTemplate(False, '', '', '../ligandOnly.xyz')
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0)
+                self.colvarsTemplate.cvHarmonicTemplate('RMSD', 10, 0)
             )
 
         # 004_RestraintUnbound
         with open(f'{path}/BFEE/004_RestraintUnbound/colvars_forward.in', 'w') as colvarsConfig:
             colvarsConfig.write(
-                self.cTemplate.cvHeadTemplate('../ligandOnly.ndx')
+                self.colvarsTemplate.cvHeadTemplate('../ligandOnly.ndx')
             )
             colvarsConfig.write(
-                self.cTemplate.cvRMSDTemplate(False, '', '', '../ligandOnly.xyz')
+                self.colvarsTemplate.cvRMSDTemplate(False, '', '', '../ligandOnly.xyz')
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('RMSD', 0, 0, stratification[3], True, 10)
+                self.colvarsTemplate.cvHarmonicTemplate('RMSD', 0, 0, stratification[3], True, 10)
             )
         with open(f'{path}/BFEE/004_RestraintUnbound/colvars_backward.in', 'w') as colvarsConfig:
             colvarsConfig.write(
-                self.cTemplate.cvHeadTemplate('../ligandOnly.ndx')
+                self.colvarsTemplate.cvHeadTemplate('../ligandOnly.ndx')
             )
             colvarsConfig.write(
-                self.cTemplate.cvRMSDTemplate(False, '', '', '../ligandOnly.xyz')
+                self.colvarsTemplate.cvRMSDTemplate(False, '', '', '../ligandOnly.xyz')
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('RMSD', 0, 0, stratification[3], False, 10)
+                self.colvarsTemplate.cvHarmonicTemplate('RMSD', 0, 0, stratification[3], False, 10)
             )
 
     def _generateGeometricNAMDConfig(
@@ -1196,7 +1198,7 @@ class inputGenerator():
         # 000_eq
         with open(f'{path}/BFEE/000_eq/000_eq.conf', 'w') as namdConfig:
             namdConfig.write(
-                self.cTemplate.namdConfigTemplate(
+                self.namdTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     '', '', '', pbc,
                     'output/eq', temperature, 5000000, 'colvars.in',
@@ -1207,7 +1209,7 @@ class inputGenerator():
         # RMSD bound
         with open(f'{path}/BFEE/001_RMSDBound/001_abf_1.conf', 'w') as namdConfig:
             namdConfig.write(
-                self.cTemplate.namdConfigTemplate(
+                self.namdTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc',
                     '', 'output/abf_1', temperature, 5000000, 'colvars_1.in',
@@ -1216,7 +1218,7 @@ class inputGenerator():
             )
         with open(f'{path}/BFEE/001_RMSDBound/001_abf_1.extend.conf', 'w') as namdConfig:
             namdConfig.write(
-                self.cTemplate.namdConfigTemplate(
+                self.namdTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'output/abf_1.restart.coor', f'output/abf_1.restart.vel', f'output/abf_1.restart.xsc',
                     '', 'output/abf_1.extend', temperature, 5000000, 'colvars_1.in', 
@@ -1230,7 +1232,7 @@ class inputGenerator():
             for i in range(1, stratification[0]):
                 with open(f'{path}/BFEE/001_RMSDBound/001_abf_{i+1}.conf', 'w') as namdConfig:
                     namdConfig.write(
-                        self.cTemplate.namdConfigTemplate(
+                        self.namdTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                         f'output/abf_{i}.restart.coor', f'output/abf_{i}.restart.vel', 
                         f'output/abf_{i}.restart.xsc',
@@ -1240,7 +1242,7 @@ class inputGenerator():
                 )
                 with open(f'{path}/BFEE/001_RMSDBound/001_abf_{i+1}.extend.conf', 'w') as namdConfig:
                     namdConfig.write(
-                        self.cTemplate.namdConfigTemplate(
+                        self.namdTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                         f'output/abf_{i+1}.restart.coor', f'output/abf_{i+1}.restart.vel', 
                         f'output/abf_{i+1}.restart.xsc',
@@ -1252,7 +1254,7 @@ class inputGenerator():
         # Theta
         with open(f'{path}/BFEE/002_EulerTheta/002_abf_1.conf', 'w') as namdConfig:
             namdConfig.write(
-                self.cTemplate.namdConfigTemplate(
+                self.namdTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc',
                     '', 'output/abf_1', temperature, 5000000, 'colvars_1.in', '',
@@ -1261,7 +1263,7 @@ class inputGenerator():
             )
         with open(f'{path}/BFEE/002_EulerTheta/002_abf_1.extend.conf', 'w') as namdConfig:
             namdConfig.write(
-                self.cTemplate.namdConfigTemplate(
+                self.namdTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'output/abf_1.restart.coor', f'output/abf_1.restart.vel', f'output/abf_1.restart.xsc',
                     '', 'output/abf_1.extend', temperature, 5000000, 'colvars_1.in', '',
@@ -1274,7 +1276,7 @@ class inputGenerator():
             for i in range(1, stratification[1]):
                 with open(f'{path}/BFEE/002_EulerTheta/002_abf_{i+1}.conf', 'w') as namdConfig:
                     namdConfig.write(
-                        self.cTemplate.namdConfigTemplate(
+                        self.namdTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                         f'output/abf_{i}.restart.coor', f'output/abf_{i}.restart.vel', 
                         f'output/abf_{i}.restart.xsc',
@@ -1284,7 +1286,7 @@ class inputGenerator():
                 )
                 with open(f'{path}/BFEE/002_EulerTheta/002_abf_{i+1}.extend.conf', 'w') as namdConfig:
                     namdConfig.write(
-                        self.cTemplate.namdConfigTemplate(
+                        self.namdTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                         f'output/abf_{i+1}.restart.coor', f'output/abf_{i+1}.restart.vel', 
                         f'output/abf_{i+1}.restart.xsc',
@@ -1296,7 +1298,7 @@ class inputGenerator():
         # Phi
         with open(f'{path}/BFEE/003_EulerPhi/003_abf_1.conf', 'w') as namdConfig:
             namdConfig.write(
-                self.cTemplate.namdConfigTemplate(
+                self.namdTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc',
                     '', 'output/abf_1', temperature, 5000000, 'colvars_1.in', '',
@@ -1305,7 +1307,7 @@ class inputGenerator():
             )
         with open(f'{path}/BFEE/003_EulerPhi/003_abf_1.extend.conf', 'w') as namdConfig:
             namdConfig.write(
-                self.cTemplate.namdConfigTemplate(
+                self.namdTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'output/abf_1.restart.coor', f'output/abf_1.restart.vel', f'output/abf_1.restart.xsc',
                     '', 'output/abf_1.extend', temperature, 5000000, 'colvars_1.in', '',
@@ -1318,7 +1320,7 @@ class inputGenerator():
             for i in range(1, stratification[2]):
                 with open(f'{path}/BFEE/003_EulerPhi/003_abf_{i+1}.conf', 'w') as namdConfig:
                     namdConfig.write(
-                        self.cTemplate.namdConfigTemplate(
+                        self.namdTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                         f'output/abf_{i}.restart.coor', f'output/abf_{i}.restart.vel', 
                         f'output/abf_{i}.restart.xsc',
@@ -1328,7 +1330,7 @@ class inputGenerator():
                 )
                 with open(f'{path}/BFEE/003_EulerPhi/003_abf_{i+1}.extend.conf', 'w') as namdConfig:
                     namdConfig.write(
-                        self.cTemplate.namdConfigTemplate(
+                        self.namdTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                         f'output/abf_{i+1}.restart.coor', f'output/abf_{i+1}.restart.vel', 
                         f'output/abf_{i+1}.restart.xsc',
@@ -1340,7 +1342,7 @@ class inputGenerator():
         # Psi
         with open(f'{path}/BFEE/004_EulerPsi/004_abf_1.conf', 'w') as namdConfig:
             namdConfig.write(
-                self.cTemplate.namdConfigTemplate(
+                self.namdTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc',
                     '', 'output/abf_1', temperature, 5000000, 'colvars_1.in', '', 
@@ -1349,7 +1351,7 @@ class inputGenerator():
             )
         with open(f'{path}/BFEE/004_EulerPsi/004_abf_1.extend.conf', 'w') as namdConfig:
             namdConfig.write(
-                self.cTemplate.namdConfigTemplate(
+                self.namdTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'output/abf_1.restart.coor', f'output/abf_1.restart.vel', f'output/abf_1.restart.xsc',
                     '', 'output/abf_1.extend', temperature, 5000000, 'colvars_1.in', '',
@@ -1362,7 +1364,7 @@ class inputGenerator():
             for i in range(1, stratification[3]):
                 with open(f'{path}/BFEE/004_EulerPsi/004_abf_{i+1}.conf', 'w') as namdConfig:
                     namdConfig.write(
-                        self.cTemplate.namdConfigTemplate(
+                        self.namdTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                         f'output/abf_{i}.restart.coor', f'output/abf_{i}.restart.vel', 
                         f'output/abf_{i}.restart.xsc',
@@ -1372,7 +1374,7 @@ class inputGenerator():
                 )
                 with open(f'{path}/BFEE/004_EulerPsi/004_abf_{i+1}.extend.conf', 'w') as namdConfig:
                     namdConfig.write(
-                        self.cTemplate.namdConfigTemplate(
+                        self.namdTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                         f'output/abf_{i+1}.restart.coor', f'output/abf_{i+1}.restart.vel', 
                         f'output/abf_{i+1}.restart.xsc',
@@ -1384,7 +1386,7 @@ class inputGenerator():
         # theta
         with open(f'{path}/BFEE/005_PolarTheta/005_abf_1.conf', 'w') as namdConfig:
             namdConfig.write(
-                self.cTemplate.namdConfigTemplate(
+                self.namdTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc',
                     '', 'output/abf_1', temperature, 5000000, 'colvars_1.in', '',
@@ -1393,7 +1395,7 @@ class inputGenerator():
             )
         with open(f'{path}/BFEE/005_PolarTheta/005_abf_1.extend.conf', 'w') as namdConfig:
             namdConfig.write(
-                self.cTemplate.namdConfigTemplate(
+                self.namdTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'output/abf_1.restart.coor', f'output/abf_1.restart.vel', f'output/abf_1.restart.xsc',
                     '', 'output/abf_1.extend', temperature, 5000000, 'colvars_1.in', '',
@@ -1407,7 +1409,7 @@ class inputGenerator():
             for i in range(1, stratification[4]):
                 with open(f'{path}/BFEE/005_PolarTheta/005_abf_{i+1}.conf', 'w') as namdConfig:
                     namdConfig.write(
-                        self.cTemplate.namdConfigTemplate(
+                        self.namdTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                         f'output/abf_{i}.restart.coor', f'output/abf_{i}.restart.vel', 
                         f'output/abf_{i}.restart.xsc',
@@ -1417,7 +1419,7 @@ class inputGenerator():
                 )
                 with open(f'{path}/BFEE/005_PolarTheta/005_abf_{i+1}.extend.conf', 'w') as namdConfig:
                     namdConfig.write(
-                        self.cTemplate.namdConfigTemplate(
+                        self.namdTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                         f'output/abf_{i+1}.restart.coor', f'output/abf_{i+1}.restart.vel', 
                         f'output/abf_{i+1}.restart.xsc',
@@ -1429,7 +1431,7 @@ class inputGenerator():
         # phi
         with open(f'{path}/BFEE/006_PolarPhi/006_abf_1.conf', 'w') as namdConfig:
             namdConfig.write(
-                self.cTemplate.namdConfigTemplate(
+                self.namdTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc',
                     '', 'output/abf_1', temperature, 5000000, 'colvars_1.in', '',
@@ -1438,7 +1440,7 @@ class inputGenerator():
             )
         with open(f'{path}/BFEE/006_PolarPhi/006_abf_1.extend.conf', 'w') as namdConfig:
             namdConfig.write(
-                self.cTemplate.namdConfigTemplate(
+                self.namdTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'output/abf_1.restart.coor', f'output/abf_1.restart.vel', f'output/abf_1.restart.xsc',
                     '', 'output/abf_1.extend', temperature, 5000000, 'colvars_1.in', '',
@@ -1451,7 +1453,7 @@ class inputGenerator():
             for i in range(1, stratification[5]):
                 with open(f'{path}/BFEE/006_PolarPhi/006_abf_{i+1}.conf', 'w') as namdConfig:
                     namdConfig.write(
-                        self.cTemplate.namdConfigTemplate(
+                        self.namdTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                         f'output/abf_{i}.restart.coor', f'output/abf_{i}.restart.vel', 
                         f'output/abf_{i}.restart.xsc',
@@ -1461,7 +1463,7 @@ class inputGenerator():
                 )
                 with open(f'{path}/BFEE/006_PolarPhi/006_abf_{i+1}.extend.conf', 'w') as namdConfig:
                     namdConfig.write(
-                        self.cTemplate.namdConfigTemplate(
+                        self.namdTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                         f'output/abf_{i+1}.restart.coor', f'output/abf_{i+1}.restart.vel', 
                         f'output/abf_{i+1}.restart.xsc',
@@ -1480,7 +1482,7 @@ class inputGenerator():
 
         with open(f'{path}/BFEE/007_r/007.1_eq.conf', 'w') as namdConfig:
             namdConfig.write(
-                self.cTemplate.namdConfigTemplate(
+                self.namdTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'./complex_largeBox.{topType}', f'./complex_largeBox.pdb',
                     '', '', '', 
                     pbcStep7,
@@ -1491,7 +1493,7 @@ class inputGenerator():
         # abf
         with open(f'{path}/BFEE/007_r/007.2_abf_1.conf', 'w') as namdConfig:
             namdConfig.write(
-                self.cTemplate.namdConfigTemplate(
+                self.namdTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'./complex_largeBox.{topType}', f'./complex_largeBox.pdb',
                     'output/eq.coor', 'output/eq.vel', 'output/eq.xsc', '',
                     'output/abf_1', temperature, 20000000, 'colvars_1.in', '',
@@ -1500,7 +1502,7 @@ class inputGenerator():
             )
         with open(f'{path}/BFEE/007_r/007.2_abf_1.extend.conf', 'w') as namdConfig:
             namdConfig.write(
-                self.cTemplate.namdConfigTemplate(
+                self.namdTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'./complex_largeBox.{topType}', f'./complex_largeBox.pdb',
                     'output/abf_1.restart.coor', 'output/abf_1.restart.vel', 'output/abf_1.restart.xsc', '',
                     'output/abf_1.extend', temperature, 20000000, 'colvars_1.in', '',
@@ -1513,7 +1515,7 @@ class inputGenerator():
             for i in range(1, stratification[6]):
                 with open(f'{path}/BFEE/007_r/007.2_abf_{i+1}.conf', 'w') as namdConfig:
                     namdConfig.write(
-                        self.cTemplate.namdConfigTemplate(
+                        self.namdTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'./complex_largeBox.{topType}', f'./complex_largeBox.pdb',
                         f'output/abf_{i}.restart.coor', f'output/abf_{i}.restart.vel', 
                         f'output/abf_{i}.restart.xsc',
@@ -1523,7 +1525,7 @@ class inputGenerator():
                 )
                 with open(f'{path}/BFEE/007_r/007.2_abf_{i+1}.extend.conf', 'w') as namdConfig:
                     namdConfig.write(
-                        self.cTemplate.namdConfigTemplate(
+                        self.namdTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'./complex_largeBox.{topType}', f'./complex_largeBox.pdb',
                         f'output/abf_{i+1}.restart.coor', f'output/abf_{i+1}.restart.vel', 
                         f'output/abf_{i+1}.restart.xsc',
@@ -1536,7 +1538,7 @@ class inputGenerator():
         # eq
         with open(f'{path}/BFEE/008_RMSDUnbound/008.1_eq.conf', 'w') as namdConfig:
             namdConfig.write(
-                self.cTemplate.namdConfigTemplate(
+                self.namdTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'./ligandOnly.{topType}', f'./ligandOnly.pdb',
                     '', '', '', 
                     pbcLig,
@@ -1546,7 +1548,7 @@ class inputGenerator():
         # abf
         with open(f'{path}/BFEE/008_RMSDUnbound/008.2_abf_1.conf', 'w') as namdConfig:
             namdConfig.write(
-                self.cTemplate.namdConfigTemplate(
+                self.namdTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'./ligandOnly.{topType}', f'./ligandOnly.pdb',
                     'output/eq.coor', 'output/eq.vel', 'output/eq.xsc', '',
                     'output/abf_1', temperature, 5000000, 'colvars_1.in'
@@ -1554,7 +1556,7 @@ class inputGenerator():
             )
         with open(f'{path}/BFEE/008_RMSDUnbound/008.2_abf_1.extend.conf', 'w') as namdConfig:
             namdConfig.write(
-                self.cTemplate.namdConfigTemplate(
+                self.namdTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'./ligandOnly.{topType}', f'./ligandOnly.pdb',
                     'output/abf_1.restart.coor', 'output/abf_1.restart.vel', 'output/abf_1.restart.xsc', '',
                     'output/abf_1.extend', temperature, 5000000, 'colvars_1.in',
@@ -1567,7 +1569,7 @@ class inputGenerator():
             for i in range(1, stratification[7]):
                 with open(f'{path}/BFEE/008_RMSDUnbound/008.2_abf_{i+1}.conf', 'w') as namdConfig:
                     namdConfig.write(
-                        self.cTemplate.namdConfigTemplate(
+                        self.namdTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'./ligandOnly.{topType}', f'./ligandOnly.pdb',
                         f'output/abf_{i}.restart.coor', f'output/abf_{i}.restart.vel', 
                         f'output/abf_{i}.restart.xsc',
@@ -1576,7 +1578,7 @@ class inputGenerator():
                 )
                 with open(f'{path}/BFEE/008_RMSDUnbound/008.2_abf_{i+1}.extend.conf', 'w') as namdConfig:
                     namdConfig.write(
-                        self.cTemplate.namdConfigTemplate(
+                        self.namdTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'./ligandOnly.{topType}', f'./ligandOnly.pdb',
                         f'output/abf_{i+1}.restart.coor', f'output/abf_{i+1}.restart.vel', 
                         f'output/abf_{i+1}.restart.xsc',
@@ -1623,419 +1625,419 @@ class inputGenerator():
         # 000_eq
         with open(f'{path}/BFEE/000_eq/colvars.in', 'w') as colvarsConfig:
             colvarsConfig.write(
-                self.cTemplate.cvHeadTemplate('../complex.ndx')
+                self.colvarsTemplate.cvHeadTemplate('../complex.ndx')
             )
             colvarsConfig.write(
-                self.cTemplate.cvProteinTemplate(center, '../complex.xyz')
+                self.colvarsTemplate.cvProteinTemplate(center, '../complex.xyz')
             )
 
         # 001_RMSDBound
         for i in range(stratification[0]):
             with open(f'{path}/BFEE/001_RMSDBound/colvars_{i+1}.in', 'w') as colvarsConfig:
                 colvarsConfig.write(
-                    self.cTemplate.cvHeadTemplate('../complex.ndx')
+                    self.colvarsTemplate.cvHeadTemplate('../complex.ndx')
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvRMSDTemplate(
+                    self.colvarsTemplate.cvRMSDTemplate(
                         True, float(i)/stratification[0] * 3.0, float(i+1)/stratification[0] * 3.0, '../complex.xyz'
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvABFTemplate('RMSD')
+                    self.colvarsTemplate.cvABFTemplate('RMSD')
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicWallsTemplate(
+                    self.colvarsTemplate.cvHarmonicWallsTemplate(
                         'RMSD', float(i)/stratification[0] * 3.0, float(i+1)/stratification[0] * 3.0
                     )
                 )
                 if pinDownPro:
                     colvarsConfig.write(
-                        self.cTemplate.cvProteinTemplate(center, '../complex.xyz')
+                        self.colvarsTemplate.cvProteinTemplate(center, '../complex.xyz')
                     )
 
         # 002_Theta
         for i in range(stratification[1]):
             with open(f'{path}/BFEE/002_EulerTheta/colvars_{i+1}.in', 'w') as colvarsConfig:
                 colvarsConfig.write(
-                    self.cTemplate.cvHeadTemplate('../complex.ndx')
+                    self.colvarsTemplate.cvHeadTemplate('../complex.ndx')
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvRMSDTemplate(False, '', '', '../complex.xyz')
+                    self.colvarsTemplate.cvRMSDTemplate(False, '', '', '../complex.xyz')
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvAngleTemplate(
+                    self.colvarsTemplate.cvAngleTemplate(
                         True, float(i)/stratification[1] * 20 - 10, float(i+1)/stratification[1] * 20 - 10, 
                         'eulerTheta', '../complex.xyz', useOldCv
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvABFTemplate('eulerTheta')
+                    self.colvarsTemplate.cvABFTemplate('eulerTheta')
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicWallsTemplate(
+                    self.colvarsTemplate.cvHarmonicWallsTemplate(
                         'eulerTheta', float(i)/stratification[1] * 20 - 10, float(i+1)/stratification[1] * 20 - 10
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0)
+                    self.colvarsTemplate.cvHarmonicTemplate('RMSD', 10, 0)
                 )
                 if pinDownPro:
                     colvarsConfig.write(
-                        self.cTemplate.cvProteinTemplate(center, '../complex.xyz')
+                        self.colvarsTemplate.cvProteinTemplate(center, '../complex.xyz')
                     )
 
         # 003_Phi
         for i in range(stratification[2]):
             with open(f'{path}/BFEE/003_EulerPhi/colvars_{i+1}.in', 'w') as colvarsConfig:
                 colvarsConfig.write(
-                    self.cTemplate.cvHeadTemplate('../complex.ndx')
+                    self.colvarsTemplate.cvHeadTemplate('../complex.ndx')
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvRMSDTemplate(False, '', '', '../complex.xyz')
+                    self.colvarsTemplate.cvRMSDTemplate(False, '', '', '../complex.xyz')
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvAngleTemplate(
+                    self.colvarsTemplate.cvAngleTemplate(
                         False, 0, 0, 'eulerTheta', '../complex.xyz', useOldCv
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvAngleTemplate(
+                    self.colvarsTemplate.cvAngleTemplate(
                         True, float(i)/stratification[2] * 20 - 10, float(i+1)/stratification[2] * 20 - 10, 
                         'eulerPhi', '../complex.xyz', useOldCv
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvABFTemplate('eulerPhi')
+                    self.colvarsTemplate.cvABFTemplate('eulerPhi')
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicWallsTemplate(
+                    self.colvarsTemplate.cvHarmonicWallsTemplate(
                         'eulerPhi', float(i)/stratification[2] * 20 - 10, float(i+1)/stratification[2] * 20 - 10
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0)
+                    self.colvarsTemplate.cvHarmonicTemplate('RMSD', 10, 0)
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicTemplate('eulerTheta', 0.1, 0)
+                    self.colvarsTemplate.cvHarmonicTemplate('eulerTheta', 0.1, 0)
                 )
                 if pinDownPro:
                     colvarsConfig.write(
-                        self.cTemplate.cvProteinTemplate(center, '../complex.xyz')
+                        self.colvarsTemplate.cvProteinTemplate(center, '../complex.xyz')
                     )
 
         # 004_Psi
         for i in range(stratification[3]):
             with open(f'{path}/BFEE/004_EulerPsi/colvars_{i+1}.in', 'w') as colvarsConfig:
                 colvarsConfig.write(
-                    self.cTemplate.cvHeadTemplate('../complex.ndx')
+                    self.colvarsTemplate.cvHeadTemplate('../complex.ndx')
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvRMSDTemplate(False, '', '', '../complex.xyz')
+                    self.colvarsTemplate.cvRMSDTemplate(False, '', '', '../complex.xyz')
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvAngleTemplate(
+                    self.colvarsTemplate.cvAngleTemplate(
                         False, 0, 0, 'eulerTheta', '../complex.xyz', useOldCv
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvAngleTemplate(
+                    self.colvarsTemplate.cvAngleTemplate(
                         False, 0, 0, 'eulerPhi', '../complex.xyz', useOldCv
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvAngleTemplate(
+                    self.colvarsTemplate.cvAngleTemplate(
                         True, float(i)/stratification[3] * 20 - 10, float(i+1)/stratification[3] * 20 - 10, 
                         'eulerPsi', '../complex.xyz', useOldCv
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvABFTemplate('eulerPsi')
+                    self.colvarsTemplate.cvABFTemplate('eulerPsi')
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicWallsTemplate(
+                    self.colvarsTemplate.cvHarmonicWallsTemplate(
                         'eulerPsi', float(i)/stratification[3] * 20 - 10, float(i+1)/stratification[3] * 20 - 10
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0)
+                    self.colvarsTemplate.cvHarmonicTemplate('RMSD', 10, 0)
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicTemplate('eulerTheta', 0.1, 0)
+                    self.colvarsTemplate.cvHarmonicTemplate('eulerTheta', 0.1, 0)
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicTemplate('eulerPhi', 0.1, 0)
+                    self.colvarsTemplate.cvHarmonicTemplate('eulerPhi', 0.1, 0)
                 )
                 if pinDownPro:
                     colvarsConfig.write(
-                        self.cTemplate.cvProteinTemplate(center, '../complex.xyz')
+                        self.colvarsTemplate.cvProteinTemplate(center, '../complex.xyz')
                     )
 
         # 005_polarTheta
         for i in range(stratification[4]):
             with open(f'{path}/BFEE/005_PolarTheta/colvars_{i+1}.in', 'w') as colvarsConfig:
                 colvarsConfig.write(
-                    self.cTemplate.cvHeadTemplate('../complex.ndx')
+                    self.colvarsTemplate.cvHeadTemplate('../complex.ndx')
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvRMSDTemplate(False, '', '', '../complex.xyz')
+                    self.colvarsTemplate.cvRMSDTemplate(False, '', '', '../complex.xyz')
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvAngleTemplate(
+                    self.colvarsTemplate.cvAngleTemplate(
                         False, 0, 0, 'eulerTheta', '../complex.xyz', useOldCv
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvAngleTemplate(
+                    self.colvarsTemplate.cvAngleTemplate(
                         False, 0, 0, 'eulerPhi', '../complex.xyz', useOldCv
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvAngleTemplate(
+                    self.colvarsTemplate.cvAngleTemplate(
                         False, 0, 0, 'eulerPsi', '../complex.xyz', useOldCv
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvAngleTemplate(
+                    self.colvarsTemplate.cvAngleTemplate(
                         True, float(i)/stratification[4] * 20 - 10 + polarAngles[0], 
                         float(i+1)/stratification[4] * 20 - 10 + polarAngles[0], 'polarTheta', 
                         '../complex.xyz', useOldCv
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvABFTemplate('polarTheta')
+                    self.colvarsTemplate.cvABFTemplate('polarTheta')
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicWallsTemplate(
+                    self.colvarsTemplate.cvHarmonicWallsTemplate(
                         'polarTheta', float(i)/stratification[4] * 20 - 10 + polarAngles[0],
                         float(i+1)/stratification[4] * 20 - 10 + polarAngles[0]
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0)
+                    self.colvarsTemplate.cvHarmonicTemplate('RMSD', 10, 0)
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicTemplate('eulerTheta', 0.1, 0)
+                    self.colvarsTemplate.cvHarmonicTemplate('eulerTheta', 0.1, 0)
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicTemplate('eulerPhi', 0.1, 0)
+                    self.colvarsTemplate.cvHarmonicTemplate('eulerPhi', 0.1, 0)
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicTemplate('eulerPsi', 0.1, 0)
+                    self.colvarsTemplate.cvHarmonicTemplate('eulerPsi', 0.1, 0)
                 )
                 if pinDownPro:
                     colvarsConfig.write(
-                        self.cTemplate.cvProteinTemplate(center, '../complex.xyz')
+                        self.colvarsTemplate.cvProteinTemplate(center, '../complex.xyz')
                     )
 
         # 006_polarPhi
         for i in range(stratification[5]):
             with open(f'{path}/BFEE/006_PolarPhi/colvars_{i+1}.in', 'w') as colvarsConfig:
                 colvarsConfig.write(
-                    self.cTemplate.cvHeadTemplate('../complex.ndx')
+                    self.colvarsTemplate.cvHeadTemplate('../complex.ndx')
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvRMSDTemplate(False, '', '', '../complex.xyz')
+                    self.colvarsTemplate.cvRMSDTemplate(False, '', '', '../complex.xyz')
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvAngleTemplate(
+                    self.colvarsTemplate.cvAngleTemplate(
                         False, 0, 0, 'eulerTheta', '../complex.xyz', useOldCv
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvAngleTemplate(
+                    self.colvarsTemplate.cvAngleTemplate(
                         False, 0, 0, 'eulerPhi', '../complex.xyz', useOldCv
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvAngleTemplate(
+                    self.colvarsTemplate.cvAngleTemplate(
                         False, 0, 0, 'eulerPsi', '../complex.xyz', useOldCv
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvAngleTemplate(
+                    self.colvarsTemplate.cvAngleTemplate(
                         False, 0, 0, 'polarTheta', '../complex.xyz', useOldCv
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvAngleTemplate(
+                    self.colvarsTemplate.cvAngleTemplate(
                         True, float(i)/stratification[5] * 20 - 10 + polarAngles[1], 
                         float(i+1)/stratification[5] * 20 - 10 + polarAngles[1], 'polarPhi', 
                         '../complex.xyz', useOldCv
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvABFTemplate('polarPhi')
+                    self.colvarsTemplate.cvABFTemplate('polarPhi')
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicWallsTemplate(
+                    self.colvarsTemplate.cvHarmonicWallsTemplate(
                         'polarPhi', float(i)/stratification[5] * 20 - 10 + polarAngles[1],
                         float(i+1)/stratification[5] * 20 - 10 + polarAngles[1]
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0)
+                    self.colvarsTemplate.cvHarmonicTemplate('RMSD', 10, 0)
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicTemplate('eulerTheta', 0.1, 0)
+                    self.colvarsTemplate.cvHarmonicTemplate('eulerTheta', 0.1, 0)
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicTemplate('eulerPhi', 0.1, 0)
+                    self.colvarsTemplate.cvHarmonicTemplate('eulerPhi', 0.1, 0)
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicTemplate('eulerPsi', 0.1, 0)
+                    self.colvarsTemplate.cvHarmonicTemplate('eulerPsi', 0.1, 0)
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicTemplate('polarTheta', 0.1, polarAngles[0])
+                    self.colvarsTemplate.cvHarmonicTemplate('polarTheta', 0.1, polarAngles[0])
                 )
                 if pinDownPro:
                     colvarsConfig.write(
-                        self.cTemplate.cvProteinTemplate(center, '../complex.xyz')
+                        self.colvarsTemplate.cvProteinTemplate(center, '../complex.xyz')
                     )
 
         # 007_r
         # eq
         with open(f'{path}/BFEE/007_r/colvars_eq.in', 'w') as colvarsConfig:
             colvarsConfig.write(
-                self.cTemplate.cvHeadTemplate('../complex.ndx')
+                self.colvarsTemplate.cvHeadTemplate('../complex.ndx')
             )
             colvarsConfig.write(
-                self.cTemplate.cvRMSDTemplate(False, '', '', './complex_largeBox.xyz')
+                self.colvarsTemplate.cvRMSDTemplate(False, '', '', './complex_largeBox.xyz')
             )
             colvarsConfig.write(
-                self.cTemplate.cvAngleTemplate(
+                self.colvarsTemplate.cvAngleTemplate(
                     False, 0, 0, 'eulerTheta', './complex_largeBox.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvAngleTemplate(
+                self.colvarsTemplate.cvAngleTemplate(
                     False, 0, 0, 'eulerPhi', './complex_largeBox.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvAngleTemplate(
+                self.colvarsTemplate.cvAngleTemplate(
                     False, 0, 0, 'eulerPsi', './complex_largeBox.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvAngleTemplate(
+                self.colvarsTemplate.cvAngleTemplate(
                     False, 0, 0, 'polarTheta', './complex_largeBox.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvAngleTemplate(
+                self.colvarsTemplate.cvAngleTemplate(
                     False, 0, 0, 'polarPhi', './complex_largeBox.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0)
+                self.colvarsTemplate.cvHarmonicTemplate('RMSD', 10, 0)
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('eulerTheta', 0.1, 0)
+                self.colvarsTemplate.cvHarmonicTemplate('eulerTheta', 0.1, 0)
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('eulerPhi', 0.1, 0)
+                self.colvarsTemplate.cvHarmonicTemplate('eulerPhi', 0.1, 0)
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('eulerPsi', 0.1, 0)
+                self.colvarsTemplate.cvHarmonicTemplate('eulerPsi', 0.1, 0)
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('polarTheta', 0.1, polarAngles[0])
+                self.colvarsTemplate.cvHarmonicTemplate('polarTheta', 0.1, polarAngles[0])
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('polarPhi', 0.1, polarAngles[1])
+                self.colvarsTemplate.cvHarmonicTemplate('polarPhi', 0.1, polarAngles[1])
             )
             colvarsConfig.write(
-                self.cTemplate.cvProteinTemplate(center, './complex_largeBox.xyz')
+                self.colvarsTemplate.cvProteinTemplate(center, './complex_largeBox.xyz')
             )
 
         # abf
         for i in range(stratification[6]):
             with open(f'{path}/BFEE/007_r/colvars_{i+1}.in', 'w') as colvarsConfig:
                 colvarsConfig.write(
-                    self.cTemplate.cvHeadTemplate('../complex.ndx')
+                    self.colvarsTemplate.cvHeadTemplate('../complex.ndx')
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvRMSDTemplate(False, '', '', './complex_largeBox.xyz')
+                    self.colvarsTemplate.cvRMSDTemplate(False, '', '', './complex_largeBox.xyz')
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvAngleTemplate(
+                    self.colvarsTemplate.cvAngleTemplate(
                         False, 0, 0, 'eulerTheta', './complex_largeBox.xyz', useOldCv
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvAngleTemplate(
+                    self.colvarsTemplate.cvAngleTemplate(
                         False, 0, 0, 'eulerPhi', './complex_largeBox.xyz', useOldCv
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvAngleTemplate(
+                    self.colvarsTemplate.cvAngleTemplate(
                         False, 0, 0, 'eulerPsi', './complex_largeBox.xyz', useOldCv
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvAngleTemplate(
+                    self.colvarsTemplate.cvAngleTemplate(
                         False, 0, 0, 'polarTheta', './complex_largeBox.xyz', useOldCv
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvAngleTemplate(
+                    self.colvarsTemplate.cvAngleTemplate(
                         False, 0, 0, 'polarPhi', './complex_largeBox.xyz', useOldCv
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvRTemplate(
+                    self.colvarsTemplate.cvRTemplate(
                         True, float(i)/stratification[6] * 24 - 2 + distance, 
                         float(i+1)/stratification[6] * 24 - 2 + distance
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvABFTemplate('r')
+                    self.colvarsTemplate.cvABFTemplate('r')
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicWallsTemplate(
+                    self.colvarsTemplate.cvHarmonicWallsTemplate(
                         'r', float(i)/stratification[6] * 24 - 2 + distance, 
                         float(i+1)/stratification[6] * 24 - 2 + distance
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0)
+                    self.colvarsTemplate.cvHarmonicTemplate('RMSD', 10, 0)
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicTemplate('eulerTheta', 0.1, 0)
+                    self.colvarsTemplate.cvHarmonicTemplate('eulerTheta', 0.1, 0)
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicTemplate('eulerPhi', 0.1, 0)
+                    self.colvarsTemplate.cvHarmonicTemplate('eulerPhi', 0.1, 0)
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicTemplate('eulerPsi', 0.1, 0)
+                    self.colvarsTemplate.cvHarmonicTemplate('eulerPsi', 0.1, 0)
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicTemplate('polarTheta', 0.1, polarAngles[0])
+                    self.colvarsTemplate.cvHarmonicTemplate('polarTheta', 0.1, polarAngles[0])
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicTemplate('polarPhi', 0.1, polarAngles[1])
+                    self.colvarsTemplate.cvHarmonicTemplate('polarPhi', 0.1, polarAngles[1])
                 )
                 if pinDownPro:
                     colvarsConfig.write(
-                        self.cTemplate.cvProteinTemplate(center, './complex_largeBox.xyz')
+                        self.colvarsTemplate.cvProteinTemplate(center, './complex_largeBox.xyz')
                     )
 
         # 008_RMSDUnbound
         for i in range(stratification[7]):
             with open(f'{path}/BFEE/008_RMSDUnbound/colvars_{i+1}.in', 'w') as colvarsConfig:
                 colvarsConfig.write(
-                    self.cTemplate.cvHeadTemplate('./ligandOnly.ndx')
+                    self.colvarsTemplate.cvHeadTemplate('./ligandOnly.ndx')
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvRMSDTemplate(
+                    self.colvarsTemplate.cvRMSDTemplate(
                         True, float(i)/stratification[7] * 3.0, float(i+1)/stratification[7] * 3.0, './ligandOnly.xyz'
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvABFTemplate('RMSD')
+                    self.colvarsTemplate.cvABFTemplate('RMSD')
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicWallsTemplate(
+                    self.colvarsTemplate.cvHarmonicWallsTemplate(
                         'RMSD', float(i)/stratification[7] * 3.0, float(i+1)/stratification[7] * 3.0
                     )
                 )

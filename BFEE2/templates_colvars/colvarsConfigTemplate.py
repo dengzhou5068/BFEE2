@@ -1,248 +1,30 @@
 # generate NAMD/Gromacs/Colvars config files
 
 class configTemplate:
-    ''' generate NAMD/Gromacs/Colvars config files
+    ''' generate Colvars config files
         In the Colvars config file, ndx and xyz files are used to indicate the group of atoms
         The non-hydrogen atoms of protein are labeled as 'protein' in complex.ndx
         The non-hydrogen atoms of ligand are labeled as 'ligand' in complex.ndx
         The non-hydrogen atoms of user-defined reference are labeled as 'reference' in complex.ndx '''
 
-    def __init__(self):
-        pass
-
-    def namdConfigTemplate(
-                            self,
-                            forceFieldType,
-                            forceFieldFiles,
-                            topFile,
-                            coorFile,
-                            NAMDRestartCoor,
-                            NAMDRestartVel,
-                            NAMDRestartXsc,
-                            PBCCondition,
-                            outputPrefix,
-                            temperature,
-                            numSteps,
-                            cvFile = '',
-                            cvDefinitionFile = '',
-                            CVRestartFile = '',
-                            fepFile = '',
-                            fepWindowNum = 20,
-                            fepForward = True,
-                            fepDoubleWide = False,
-                            fepMinBeforeSample = False,
-                            membraneProtein = False
-                            ):
-        """the namd config file template
+    def __init__(self, unit='namd'):
+        """initialize template of colvars config
 
         Args:
-            forceFieldType (str): 'charmm' or 'amber'
-            forceFieldFiles (list of str): name of charmm force field files
-            topFile (str): name of the topology file (psf, parm) 
-            coorFile (str): name of the coordinate file (pdb, rst)
-            NAMDRestartCoor (str): name of namd binary restart coor file (if restart from a previous simulation)
-            NAMDRestartVel (str): name of namd binary restart vel file
-            NAMDRestartXsc (str): name of namd restart xsc file
-            PBCCondition (np.array, 2*3): PBC vector, ((lengthX, lengthY, lengthZ),(centerX, centerY, centerZ))
-            outputPrefix (str): prefix of output file
-            temperature (float): temperature of the simulation
-            numSteps (int): number of steps of the simulation
-            cvFile (str): name of Colvars file. Defaults to ''.
-            cvDefinitionFile (str, optional): name of a TCL file defining new CVs. Defaults to ''.
-            CVRestartFile (str, optional): name of Colvars restart file. Defaults to ''.
-            fepFile (str, optional): name of fep file, indicating which atoms will be generated/removed 
-                                     (if run alchemical simulation). Defaults to ''.
-            fepWindowNum (int, optional): number of fep windows. Defaults to 20.
-            fepForward (bool, optional): whether this is a forward fep simulation. Defaults to True.
-            fepDoubleWide (bool, optional): whether this is a double-wide fep simulation. Defaults to False.
-            fepMinBeforeSample (bool, optional): whether do minimization before sampling in each FEP window.
-                                                 Defaults to False.
-            membraneProtein (bool, optional): whether simulating a membrame protein. Defaults to False.
-            
-        Returns:
-            str: a NAMD config string if succeed, and empty string otherwise
+            unit (str): 'namd' (A, kcal) or 'gromacs' (nm, kJ). Defaults to 'namd'.
         """
-
-        assert(forceFieldType == 'charmm' or forceFieldType == 'amber')
-
-        configString = f'\
-coordinates    {coorFile}                   \n'
-
-        # force field files
-        if forceFieldType == 'charmm':
-            configString += f'\
-structure      {topFile}                \n\
-paraTypeCharmm    on                    \n'
-            for ff in forceFieldFiles:
-                configString += f'\
-parameters    {ff}                      \n'
-        elif forceFieldType == 'amber':
-            configString += f'\
-parmFile      {topFile}                 \n\
-amber    on                             \n'
-        else:
-            # error
-            return ''
-
-        # structure
-        if forceFieldType == 'charmm':
-            configString += f'\
-exclude    scaled1-4                    \n\
-1-4scaling    1.0                       \n\
-switching            on                 \n\
-switchdist           10.0               \n\
-cutoff               12.0               \n\
-pairlistdist         14.0               \n'
-        elif forceFieldType == 'amber':
-            configString += f'\
-exclude    scaled1-4                    \n\
-1-4scaling    0.83333333                \n\
-switching            on                 \n\
-switchdist           8.0                \n\
-cutoff               9.0                \n\
-pairlistdist         11.0               \n'
-        else:
-            # error
-            return ''
-
-        if NAMDRestartCoor == '' and NAMDRestartVel == '' and NAMDRestartXsc == '' and PBCCondition != '':
-            # set temperature
-            configString += f'\
-temperature    {temperature}                      \n\
-cellBasisVector1    {PBCCondition[0][0]} 0 0         \n\
-cellBasisVector2    0 {PBCCondition[0][1]} 0         \n\
-cellBasisVector3    0 0 {PBCCondition[0][2]}         \n\
-cellOrigin    {PBCCondition[1][0]} {PBCCondition[1][1]} {PBCCondition[1][2]}  \n'
-        elif NAMDRestartCoor != '' and NAMDRestartVel != '' and NAMDRestartXsc != '' and PBCCondition == '':
-            # restart from files
-            configString += f'\
-bincoordinates    {NAMDRestartCoor}                          \n\
-binvelocities    {NAMDRestartVel}                            \n\
-ExtendedSystem    {NAMDRestartXsc}                           \n'
-        else:
-            # error
-            return ''
-
-        # other parameters
-        configString += f'\
-binaryoutput         yes                        \n\
-binaryrestart        yes                        \n\
-outputname           {outputPrefix}             \n\
-dcdUnitCell          yes                        \n\
-outputenergies       5000                       \n\
-outputtiming         5000                       \n\
-outputpressure       5000                       \n\
-restartfreq          5000                       \n\
-XSTFreq              5000                       \n\
-dcdFreq              5000                       \n\
-hgroupcutoff         2.8                        \n\
-wrapAll              off                        \n\
-wrapWater            on                         \n\
-langevin             on                         \n\
-langevinDamping      1                          \n\
-langevinTemp         {temperature}              \n\
-langevinHydrogen     no                         \n\
-langevinpiston       on                         \n\
-langevinpistontarget 1.01325                    \n\
-langevinpistonperiod 200                        \n\
-langevinpistondecay  100                        \n\
-langevinpistontemp   {temperature}              \n\
-usegrouppressure     yes                        \n\
-PME                  yes                        \n\
-PMETolerance         10e-6                      \n\
-PMEInterpOrder       4                          \n\
-PMEGridSpacing       1.0                        \n\
-timestep             2.0                        \n\
-fullelectfrequency   2                          \n\
-nonbondedfreq        1                          \n\
-rigidbonds           all                        \n\
-rigidtolerance       0.00001                    \n\
-rigiditerations      400                        \n\
-stepspercycle        10                         \n\
-splitpatch           hydrogen                   \n\
-margin               2                          \n'
-
-        # membrane protein
-        if membraneProtein:
-            configString += f'\
-useflexiblecell      yes                        \n\
-useConstantRatio     yes                        \n'
-        else:
-            configString += f'\
-useflexiblecell      no                         \n\
-useConstantRatio     no                         \n'
-
-        # colvars definition
-        if cvFile != '':
-            configString += f'\
-colvars    on                                   \n\
-colvarsConfig    {cvFile}                       \n'
-
-            if CVRestartFile != '':
-                configString += f'\
-colvarsInput     {CVRestartFile}                \n'
-
-
-        if cvDefinitionFile != '':
-            configString += f'\
-source     {cvDefinitionFile}                   \n'
-
-        # fep
-        if fepFile == '':
-            if NAMDRestartCoor == '' and NAMDRestartVel == '' and NAMDRestartXsc == '':
-                configString += f'\
-minimize    500                                 \n\
-reinitvels    {temperature}                     \n'
-            configString += f'\
-run    {numSteps}                               \n'
-        else:
-            # currently the alchemical route is somewhat hard-coded
-            # this will be improved in the future
-            configString += f'\
-source ../fep.tcl                                  \n\
-alch on                                         \n\
-alchType FEP                                    \n\
-alchFile {fepFile}                              \n\
-alchCol B                                       \n\
-alchOutFile {outputPrefix}.fepout               \n\
-alchOutFreq 50                                  \n\
-alchVdwLambdaEnd 0.7                            \n\
-alchElecLambdaStart 0.5                         \n\
-alchEquilSteps 100000                           \n'
-
-            if fepForward:
-                if not fepDoubleWide:
-                    if fepMinBeforeSample:
-                        # minimize before sampling
-                        configString += f'\
-runFEPmin 0.0 1.0 {1.0/fepWindowNum} 500000 1000 {temperature}\n'
-                    else:
-                        configString += f'\
-runFEP 0.0 1.0 {1.0/fepWindowNum} 500000\n'
-
-                else:
-                    # double wide simulation
-                    configString += f'\
-runFEP 0.0 1.0 {1.0/fepWindowNum} 500000 true\n'
-
-            else:
-                # backward
-                if not fepDoubleWide:
-                    if fepMinBeforeSample:
-                        # minimize before sampling
-                        configString += f'\
-runFEPmin 1.0 0.0 {-1.0/fepWindowNum} 500000 1000 {temperature}\n'
-                    else:
-                        configString += f'\
-runFEP 1.0 0.0 {-1.0/fepWindowNum} 500000\n'
-
-                else:
-                    # double wide simulation
-                    configString += f'\
-runFEP 1.0 0.0 {-1.0/fepWindowNum} 500000 true\n'
-
-        return configString
-
+        
+        assert(unit == 'namd' or unit == 'gromacs')
+        self.unit = unit
+        
+        # scale factor of energy and length
+        # by default, kcal and A are used
+        if self.unit == 'namd':
+            self.energyFactor = 1.0
+            self.lengthFactor = 1.0
+        elif self.unit == 'gromacs':
+            self.energyFactor = 4.184
+            self.lengthFactor = 0.1
 
     def cvRMSDTemplate(self, setBoundary, lowerBoundary, upperBoundary, refFile):
         """RMSD CV template
@@ -263,13 +45,13 @@ colvar {{                                    \n\
 
         if setBoundary:
             string += f'\
-    width 0.05                               \n\
-    lowerboundary {lowerBoundary:.1f}            \n\
-    upperboundary {upperBoundary:.1f}            \n\
+    width {0.05 * self.lengthFactor}         \n\
+    lowerboundary {lowerBoundary:.1f}        \n\
+    upperboundary {upperBoundary:.1f}        \n\
     subtractAppliedForce on                  \n\
     expandboundaries  on                     \n\
     extendedLagrangian on                    \n\
-    extendedFluctuation 0.05                 \n'
+    extendedFluctuation {0.05 * self.lengthFactor}      \n'
 
         string += f'\
     rmsd {{                                  \n\
@@ -559,7 +341,7 @@ colvar {{                                   \n\
         Args:
             setBoundary (bool): whether set boundary (for free-energy calculation)
             lowerBoundary (float): lower boundary of free-energy calculaton
-            upperboundary (float): upper boundary of free-energy 
+            upperboundary (float): upper boundary of free-energy
         
         Returns:
             str: string of distance r definition
@@ -570,13 +352,13 @@ colvar {{                            \n\
     name    r                        \n'
         if setBoundary:
             string += f'\
-    width 0.1                        \n\
+    width {0.1 * self.lengthFactor}      \n\
     lowerboundary {lowerBoundary:.1f}    \n\
     upperboundary {upperBoundary:.1f}    \n\
     subtractAppliedForce on          \n\
     expandboundaries  on             \n\
     extendedLagrangian on            \n\
-    extendedFluctuation 0.1          \n'
+    extendedFluctuation {0.1 * self.lengthFactor}          \n'
 
         string += f'\
     distance {{                            \n\
@@ -623,8 +405,8 @@ harmonicWalls {{                           \n\
     colvars           {cv}                 \n\
     lowerWalls        {lowerWall:.1f}      \n\
     upperWalls        {upperWall:.1f}      \n\
-    lowerWallConstant 0.2                  \n\
-    upperWallConstant 0.2                  \n\
+    lowerWallConstant {0.2 * self.energyFactor}      \n\
+    upperWallConstant {0.2 * self.energyFactor}      \n\
 }}                                         \n'
         return string
 
@@ -633,28 +415,28 @@ harmonicWalls {{                           \n\
 
         Args:
             cv (str): name of the colvars
-            constant (float): force constant of the restraint
+            constant (float): force constant of the restraint (in kcal/mol)
             center (float): center of the restraint
             tiWindows (int): number of windows of the TI simulation (if runs a TI simulation). Defaults to 0.
             tiForward (bool, optional): whether the TI simulation is forward (if runs a TI simulation). Defaults to True.
-            targetForceConstant (int, optional): targeted force constant of the restraint in TI simulation (if runs a TI simulation).
-                                                 Defaults to 0.
+            targetForceConstant (int, optional): targeted force constant of the restraint in TI simulation
+                                                 (if runs a TI simulation)  (in kcal/mol). Defaults to 0.
         
         Returns:
             str: string of the harmonic restraint definition
-        """        
+        """
 
         string = f'\
 harmonic {{                          \n\
     colvars         {cv}             \n\
-    forceConstant   {constant:.1f}   \n\
+    forceConstant   {constant * self.energyFactor:.1f}   \n\
     centers         {center:.1f}     \n'
         
         if tiWindows != 0:
             string += f'\
     targetNumSteps      500000                       \n\
     targetEquilSteps    100000                       \n\
-    targetForceConstant {targetForceConstant}        \n\
+    targetForceConstant {targetForceConstant * self.energyFactor}        \n\
     targetForceExponent 4                            \n'
 
             schedule = ''
@@ -687,7 +469,7 @@ abf {{                            \n\
 metadynamics {{                   \n\
     colvars           {cv}        \n\
     hillWidth         3.0         \n\
-    hillWeight        0.05        \n\
+    hillWeight        {0.05 * self.energyFactor}        \n\
     wellTempered      on          \n\
     biasTemperature   4000        \n\
 }}                                \n'
@@ -712,14 +494,14 @@ colvar {{                         \n\
       indexGroup  protein         \n\
     }}                            \n\
     group2 {{                     \n\
-      dummyAtom ({centerCoor[0]}, {centerCoor[1]}, {centerCoor[2]})    \n\
+      dummyAtom ({centerCoor[0] * self.lengthFactor}, {centerCoor[1] * self.lengthFactor}, {centerCoor[2] * self.lengthFactor})    \n\
     }}                            \n\
   }}                              \n\
 }}                                \n\
 harmonic {{                       \n\
   colvars       translation       \n\
   centers       0.0               \n\
-  forceConstant 100.0             \n\
+  forceConstant {100.0 * self.energyFactor}    \n\
 }}                                \n\
                                   \n\
 colvar {{                         \n\
@@ -734,6 +516,6 @@ colvar {{                         \n\
 harmonic {{                       \n\
   colvars       orientation       \n\
   centers       (1.0, 0.0, 0.0, 0.0)    \n\
-  forceConstant 2000.0            \n\
+  forceConstant {2000.0 * self.energyFactor}   \n\
 }}                                \n'
         return string
