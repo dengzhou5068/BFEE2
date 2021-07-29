@@ -72,3 +72,4 @@ def checkAllFiles(refPath, targetPath, files):
                 print(f'Warning, {targetPath}/BFEE/{name} and {refPath}/{name} are not the same!')
     else:
         print(f'Error! some files do not exist!')
+    print(f'Checking finished!')
